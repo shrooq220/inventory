@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Inventory{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'theme.css' %}">
+</head>
+<body>
+
+<nav class="navbar">
+  <!-- Logo -->
+  <a href="{% url 'home' %}">
+    <img src="{% static 'images/FMRS-logo.png' %}" alt="Logo" class="cart-icon" style="width: 50px; height: auto;">
+  </a>
+
+  <!-- Search bar -->
+  <form class="search-form" method="GET" action="{% url 'search_items' %}">
+    <input type="text" name="q" placeholder="Search products..." required>
+    <button type="submit" class="btn-accent">Search</button>
+  </form>
+
+  <!-- Navigation links -->
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Home</a>
+    <a href="#">Items</a>
+    <a href="#">Orders</a>
+  </div>
+
+  <!-- Cart icon with badge -->
+  <a href="{% url 'cart' %}" class="cart-link">
+    <img src="{% static 'images/shopping-cart.png' %}" alt="Cart" class="cart-icon">
+    {% if cart_item_count and cart_item_count > 0 %}
+      <span class="cart-badge">{{ cart_item_count }}</span>
+    {% endif %}
+  </a>
+</nav>
+
+<!-- Content block for child templates -->
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>
