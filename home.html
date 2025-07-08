@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <div class="product-grid">
+    {% for item in items %}
+      <div class="product-card">
+        {% if item.image %}
+          <img src="{{ item.image.url }}" alt="{{ item.title }}">
+        {% else %}
+          <div class="no-image">No Image</div>
+        {% endif %}
+        <h3>{{ item.title }}</h3>
+        <button class="btn-primary">Add to Cart</button>
+      </div>
+    {% empty %}
+      <p>No items found.</p>
+    {% endfor %}
+  </div>
+{% endblock %}
