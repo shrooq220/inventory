@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}تعديل منتج: {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 160px);">
+    <div class="card p-4 shadow-lg" style="width: 100%; max-width: 500px;">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4 fs-2 fw-bold text-primary">تعديل منتج: {{ product.name }}</h2>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}:</label>
+                        {{ field.as_widget class="form-control" }}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary w-100 mt-3">حفظ التغييرات</button>
+            </form>
+            <div class="text-center mt-4">
+                <a href="{% url 'admin_dashboard' %}" class="text-decoration-none">العودة إلى لوحة تحكم المدير</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

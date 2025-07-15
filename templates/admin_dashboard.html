@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% load static %} {# تأكد من تحميل static هنا أيضاً #}
+
+{% block title %}لوحة تحكم المدير{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4 text-primary fw-bold">لوحة تحكم المدير</h1>
+
+{% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="row g-4 mb-4">
+    <!-- بطاقة طلبات تسجيل المستخدمين المعلقة -->
+    <div class="col-md-6">
+        <div class="card h-100 border-warning">
+            <div class="card-body">
+                <h2 class="card-title mb-3 fs-4 text-warning"><i class="fas fa-user-clock me-2"></i> طلبات تسجيل المستخدمين المعلقة</h2>
+                {% if users %}
+                    <ul class="list-group list-group-flush">
+                        {% for user_obj in users %} {# تغيير اسم المتغير لتجنب التعارض مع 'user' في السياق #}
+                            {% if not user_obj.is_admin and not user_obj.is_approved %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-warning-subtle">
+                                <div>
+                                    <h5 class="mb-1">{{ user_obj.username }}</h5>
+                                    <small class="text-muted">{{ user_obj.email }}</small>
+                                </div>
+                                <div>
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="approve_user">
+                                        <input type="hidden" name="user_id" value="{{ user_obj.id }}">
+                                        <button type="submit" class="btn btn-success btn-sm me-2">
+                                            <i class="fas fa-check me-1"></i> موافقة
+                                        </button>
+                                    </form>
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="reject_user"> {# يمكن إضافة هذا الإجراء في views #}
+                                        <input type="hidden" name="user_id" value="{{ user_obj.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-times me-1"></i> رفض
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                            {% endif %}
+                        {% empty %}
+                            <li class="list-group-item text-muted">لا توجد طلبات تسجيل معلقة حاليًا.</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">لا توجد طلبات تسجيل معلقة حاليًا.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقة إدارة المنتجات -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-cubes me-2"></i> إدارة المنتجات</h2>
+                
+                <!-- نموذج إضافة منتج جديد -->
+                <h3 class="fs-5 mb-3">إضافة منتج</h3>
+                <form method="post" enctype="multipart/form-data" class="mb-4 p-3 border rounded bg-light">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_product">
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label">اسم المنتج:</label>
+                        <input type="text" class="form-control" id="product_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_description" class="form-label">الوصف (اختياري):</label> {# إضافة حقل الوصف #}
+                        <textarea class="form-control" id="product_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_quantity" class="form-label">الكمية:</label>
+                        <input type="number" class="form-control" id="product_quantity" name="quantity" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_image" class="form-label">صورة المنتج:</label>
+                        <input type="file" class="form-control" id="product_image" name="image" accept="image/*">
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_category" class="form-label">الفئة:</label>
+                        <select class="form-select" id="product_category" name="category">
+                            <option value="medical_tools">أدوات طبية</option>
+                            <option value="consumables">مواد استهلاكية</option>
+                            {# أضف المزيد من الفئات هنا #}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-plus-circle me-1"></i> إضافة المنتج
+                    </button>
+                </form>
+
+                <!-- قائمة المنتجات الحالية للتعديل/الحذف -->
+                <h3 class="fs-5 mb-3">المنتجات الحالية</h3>
+                {% if products %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">الصورة</th>
+                                    <th scope="col">اسم المنتج</th>
+                                    <th scope="col">الكمية</th>
+                                    <th scope="col">الفئة</th>
+                                    <th scope="col">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                    <tr>
+                                        <td>
+                                            {% if product.image %}
+                                                <img src="{% if product.image.url %}{{ product.image.url }}{% else %}{% static 'placeholder.png' %}{% endif %}" alt="{{ product.name }}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                                <i class="fas fa-image text-muted" style="font-size: 2rem;"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.quantity }}</td>
+                                        <td>{{ product.category }}</td>
+                                        <td>
+                                            <!-- نموذج تعديل المنتج (يفتح في نفس الصفحة) -->
+                                            <button type="button" class="btn btn-info btn-sm me-2" data-bs-toggle="modal" data-bs-target="#editProductModal{{ product.id }}">
+                                                <i class="fas fa-edit me-1"></i> تعديل
+                                            </button>
+                                            <!-- نموذج حذف المنتج (يفتح في نفس الصفحة) -->
+                                            <form method="post" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا المنتج؟');"> {# إضافة تأكيد JavaScript هنا #}
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="delete_product">
+                                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                                <button type="submit" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash-alt me-1"></i> حذف
+                                                </button>
+                                            </form>
+
+                                            <!-- Modal لتعديل المنتج -->
+                                            <div class="modal fade" id="editProductModal{{ product.id }}" tabindex="-1" aria-labelledby="editProductModalLabel{{ product.id }}" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="editProductModalLabel{{ product.id }}">تعديل منتج: {{ product.name }}</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form method="post" enctype="multipart/form-data">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="action" value="edit_product">
+                                                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label for="edit_product_name_{{ product.id }}" class="form-label">اسم المنتج:</label>
+                                                                    <input type="text" class="form-control" id="edit_product_name_{{ product.id }}" name="name" value="{{ product.name }}" required>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="edit_product_description_{{ product.id }}" class="form-label">الوصف (اختياري):</label> {# إضافة حقل الوصف #}
+                                                                    <textarea class="form-control" id="edit_product_description_{{ product.id }}" name="description" rows="3">{{ product.description|default:"" }}</textarea>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="edit_product_quantity_{{ product.id }}" class="form-label">الكمية:</label>
+                                                                    <input type="number" class="form-control" id="edit_product_quantity_{{ product.id }}" name="quantity" value="{{ product.quantity }}" min="0" required>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="edit_product_image_{{ product.id }}" class="form-label">صورة المنتج:</label>
+                                                                    <input type="file" class="form-control" id="edit_product_image_{{ product.id }}" name="image" accept="image/*">
+                                                                    {% if product.image %}
+                                                                        <small class="form-text text-muted mt-2">الصورة الحالية: <a href="{{ product.image.url }}" target="_blank">عرض</a></small>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="edit_product_category_{{ product.id }}" class="form-label">الفئة:</label>
+                                                                    <select class="form-select" id="edit_product_category_{{ product.id }}" name="category">
+                                                                        <option value="medical_tools" {% if product.category == 'medical_tools' %}selected{% endif %}>أدوات طبية</option>
+                                                                        <option value="consumables" {% if product.category == 'consumables' %}selected{% endif %}>مواد استهلاكية</option>
+                                                                        {# أضف المزيد من الفئات هنا #}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                                <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-muted text-center">لا توجد منتجات حاليًا. يرجى إضافة منتجات.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">لا توجد منتجات حاليًا. يرجى إضافة منتجات.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- بطاقة إدارة الطلبات -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-shopping-cart me-2"></i> إدارة الطلبات</h2>
+        {% if orders %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">الطلب #</th>
+                            <th scope="col">المستخدم</th>
+                            <th scope="col">المنتج</th>
+                            <th scope="col">الكمية</th>
+                            <th scope="col">الحالة</th>
+                            <th scope="col">تاريخ الطلب</th>
+                            <th scope="col">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>{{ order.product.name }}</td>
+                                <td>{{ order.quantity }}</td>
+                                <td>
+                                    <span class="badge {% if order.status == 'Approved' %}bg-success{% elif order.status == 'Rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    {% if order.status == 'Pending' %}
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="approve_order">
+                                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                                            <button type="submit" class="btn btn-success btn-sm me-2">
+                                                <i class="fas fa-check me-1"></i> موافقة
+                                            </button>
+                                        </form>
+                                        <form method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="reject_order">
+                                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-times me-1"></i> رفض
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-muted small">تمت المعالجة</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-muted text-center">لا توجد طلبات حاليًا.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">لا توجد طلبات حاليًا.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- بطاقة تقرير الاستهلاك الشهري للمدير -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-chart-bar me-2"></i> تقرير الاستهلاك الشهري (لجميع المستخدمين)</h2>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">المنتج</th>
+                        <th scope="col">المستخدم</th>
+                        <th scope="col">الكمية المستهلكة</th>
+                        <th scope="col">تاريخ الاستهلاك</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in consumption_records %}
+                        <tr>
+                            <td>{{ record.product.name }}</td>
+                            <td>{{ record.user.username }}</td>
+                            <td>{{ record.quantity }}</td>
+                            <td>{{ record.consumed_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-muted text-center">لا توجد سجلات استهلاك حاليًا.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- بطاقة تسجيل الاستهلاك يدوياً -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-plus-square me-2"></i> تسجيل استهلاك يدوي</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_consumption">
+            <div class="mb-3">
+                <label for="consumption_user" class="form-label">المستخدم:</label>
+                <select class="form-select" id="consumption_user" name="user_id" required>
+                    <option value="">اختر مستخدم...</option>
+                    {% for user_obj in users %}
+                        <option value="{{ user_obj.id }}">{{ user_obj.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="consumption_product" class="form-label">المنتج:</label>
+                <select class="form-select" id="consumption_product" name="product_id" required>
+                    <option value="">اختر منتج...</option>
+                    {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }} (متاح: {{ product.quantity }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="consumption_quantity" class="form-label">الكمية المستهلكة:</label>
+                <input type="number" class="form-control" id="consumption_quantity" name="quantity" min="1" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">تسجيل الاستهلاك</button>
+        </form>
+    </div>
+</div>
+
+<!-- بطاقة التقارير (يمكن توسيعها لاحقاً) -->
+<div class="card">
+    <div class="card-body">
+        <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-file-alt me-2"></i> التقارير</h2>
+        {% if reports %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">المستخدم</th>
+                            <th scope="col">الشهر</th>
+                            <th scope="col">المنتج</th>
+                            <th scope="col">المستهلك</th>
+                            <th scope="col">المتبقي</th>
+                            <th scope="col">تاريخ التقرير</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                            <tr>
+                                <td>{{ report.user.username }}</td>
+                                <td>{{ report.month }}</td>
+                                <td>{{ report.product.name }}</td>
+                                <td>{{ report.consumed }}</td>
+                                <td>{{ report.remaining }}</td>
+                                <td>{{ report.created_at|date:"Y-m-d" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">لا توجد تقارير حاليًا.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
