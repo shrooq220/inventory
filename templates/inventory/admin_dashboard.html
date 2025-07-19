@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}لوحة تحكم المدير{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4 text-primary fw-bold">لوحة تحكم المدير</h1>
+
+<div class="row g-4 mb-4">
+    <!-- بطاقة طلبات تسجيل المستخدمين المعلقة -->
+    <div class="col-md-6">
+        <div class="card h-100 border-warning">
+            <div class="card-body">
+                <h2 class="card-title mb-3 fs-4 text-warning"><i class="fas fa-user-clock me-2"></i> طلبات تسجيل المستخدمين المعلقة</h2>
+                {% if pending_users %}
+                    <ul class="list-group list-group-flush">
+                        {% for user_profile in pending_users %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-warning-subtle">
+                                <div>
+                                    <h5 class="mb-1">{{ user_profile.user.username }}</h5>
+                                    <small class="text-muted">{{ user_profile.user.email }}</small>
+                                </div>
+                                <div>
+                                    <a href="{% url 'inventory:user_approve' user_profile.user.id %}" class="btn btn-success btn-sm me-2"> {# تم التحديث #}
+                                        <i class="fas fa-check me-1"></i> موافقة
+                                    </a>
+                                    <a href="{% url 'inventory:user_reject' user_profile.user.id %}" class="btn btn-danger btn-sm"> {# تم التحديث #}
+                                        <i class="fas fa-times me-1"></i> رفض
+                                    </a>
+                                </div>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">لا توجد طلبات تسجيل معلقة حاليًا.</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">لا توجد طلبات تسجيل معلقة حاليًا.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقة إدارة المنتجات -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-cubes me-2"></i> إدارة المنتجات</h2>
+                <a href="{% url 'inventory:add_product' %}" class="btn btn-primary mb-3"> {# تم التحديث #}
+                    <i class="fas fa-plus-circle me-1"></i> إضافة منتج جديد
+                </a>
+                {% if products %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">اسم المنتج</th>
+                                    <th scope="col">الكمية</th>
+                                    <th scope="col">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                    <tr>
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.quantity }}</td>
+                                        <td>
+                                            <a href="{% url 'inventory:edit_product' product.id %}" class="btn btn-info btn-sm me-2"> {# تم التحديث #}
+                                                <i class="fas fa-edit me-1"></i> تعديل
+                                            </a>
+                                            <a href="{% url 'inventory:delete_product' product.id %}" class="btn btn-danger btn-sm"> {# تم التحديث #}
+                                                <i class="fas fa-trash-alt me-1"></i> حذف
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-muted text-center">لا توجد منتجات حاليًا. يرجى إضافة منتجات.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">لا توجد منتجات حاليًا. يرجى إضافة منتجات.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- بطاقة إدارة الطلبات -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-shopping-cart me-2"></i> إدارة الطلبات</h2>
+        {% if orders %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">الطلب #</th>
+                            <th scope="col">المستخدم</th>
+                            <th scope="col">المنتج</th>
+                            <th scope="col">الكمية</th>
+                            <th scope="col">الحالة</th>
+                            <th scope="col">تاريخ الطلب</th>
+                            <th scope="col">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>{{ order.product.name }}</td>
+                                <td>{{ order.quantity }}</td>
+                                <td>
+                                    <span class="badge {% if order.status == 'Approved' %}bg-success{% elif order.status == 'Rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    {% if order.status == 'Pending' %}
+                                        <a href="{% url 'inventory:approve_order' order.id %}" class="btn btn-success btn-sm me-2"> {# تم التحديث #}
+                                            <i class="fas fa-check me-1"></i> موافقة
+                                        </a>
+                                        <a href="{% url 'inventory:reject_order' order.id %}" class="btn btn-danger btn-sm"> {# تم التحديث #}
+                                            <i class="fas fa-times me-1"></i> رفض
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted small">تمت المعالجة</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-muted text-center">لا توجد طلبات حاليًا.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">لا توجد طلبات حاليًا.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- بطاقة المنتجات الأكثر استهلاكًا (للمدير - جميع المستخدمين) -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-chart-pie me-2"></i> الأكثر استهلاكًا (آخر 30 يومًا - جميع المستخدمين)</h2>
+                <ul class="list-group list-group-flush">
+                    {% for item in top_consumed_products_admin %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ item.product__name }}</span>
+                            <span class="badge bg-info text-dark">الكمية: {{ item.total_consumed }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">لا توجد بيانات استهلاك حاليًا.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقة المنتجات النافدة (للمدير - جميع المنتجات) -->
+    <div class="col-md-6">
+        <div class="card h-100 border-danger">
+            <div class="card-body">
+                <h2 class="card-title mb-3 fs-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i> مخزون منخفض / نافد (جميع المنتجات)</h2>
+                <ul class="list-group list-group-flush">
+                    {% for product in low_stock_products_admin %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-danger-subtle">
+                            <span class="text-danger fw-bold">{{ product.name }}</span>
+                            <span class="text-danger">الكمية المتبقية: {{ product.quantity }}</span>
+                            {% if product.quantity == 0 %}
+                                <span class="badge bg-danger">نفذ المخزون!</span>
+                            {% endif %}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">جميع المنتجات بكمية كافية.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- بطاقة تقرير الاستهلاك الشهري للمدير (موجودة مسبقاً) -->
+<div class="card">
+    <div class="card-body">
+        <h2 class="card-title mb-3 fs-4 text-secondary"><i class="fas fa-chart-bar me-2"></i> تقرير الاستهلاك الشهري ({{ current_month }}) - لجميع المستخدمين</h2>
+        {% if admin_monthly_consumption %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">المنتج</th>
+                            <th scope="col">المستخدم</th>
+                            <th scope="col">الكمية المستهلكة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in admin_monthly_consumption %}
+                            <tr>
+                                <td>{{ item.product__name }}</td>
+                                <td>{{ item.user__username }}</td>
+                                <td>{{ item.total_consumed }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-muted text-center">لا توجد بيانات استهلاك لهذا الشهر بعد.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">لا توجد بيانات استهلاك لهذا الشهر بعد.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

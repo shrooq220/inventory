@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}تسجيل حساب جديد{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 160px);">
+    <div class="card p-4 shadow-lg" style="width: 100%; max-width: 500px;">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4 fs-2 fw-bold text-success">تسجيل حساب جديد</h2>
+            {% if message %}
+                <div class="alert alert-success text-center" role="alert">
+                    {{ message }}
+                </div>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}:</label>
+                        {{ field.as_widget class="form-control" }}
+                        {% if field.errors %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                {% if form.non_field_errors %}
+                    {% for error in form.non_field_errors %}
+                        <div class="alert alert-danger mt-3" role="alert">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+                <button type="submit" class="btn btn-success w-100 mt-3">إرسال طلب التسجيل</button>
+            </form>
+            <p class="text-center text-muted mt-4">
+                لديك حساب بالفعل؟ <a href="{% url 'inventory:login' %}" class="text-decoration-none">تسجيل الدخول</a> {# تم التحديث #}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
